@@ -641,13 +641,31 @@
                 let currC = pw.direction === 'across' ? c + i : c;
                 const input = document.getElementById(`cell-${currR}-${currC}`);
                 if (input) {
+                    // Isi huruf jawaban yang benar
                     input.value = pw.word[i];
-                    if (isAuto) {
-                        input.classList.add('cell-auto-revealed');
-                    } else {
-                        input.classList.add('cell-correct');
+
+                    // Jika sel ini belum pernah ditandai benar (atau jika hanya auto-fill baru),
+                    // berikan status warna sesuai mode (cell-correct atau cell-auto-revealed).
+                    // Jika sel perpotongan sudah ditandai 'cell-correct', pertahankan warna hijau tersebut.
+                    if (!input.classList.contains('cell-correct')) {
+                        if (isAuto) {
+                            input.classList.add('cell-auto-revealed');
+                        } else {
+                            input.classList.remove('cell-auto-revealed');
+                            input.classList.add('cell-correct');
+                        }
                     }
-                    input.disabled = true;
+
+                    // Kunci sel jika SELURUH kata yang melewati sel ini sudah selesai (terjawab / auto-reveal)
+                    const cellData = gridState[currR][currC];
+                    if (cellData) {
+                        const allPassingWordsDone = cellData.words.every(wNum => 
+                            solvedWords.has(wNum) || autoRevealedWords.has(wNum)
+                        );
+                        if (allPassingWordsDone) {
+                            input.disabled = true;
+                        }
+                    }
                 }
             }
         }
