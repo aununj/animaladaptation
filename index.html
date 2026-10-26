@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Battle: Animal Adaptations Crossword</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(135deg, #090d16 0%, #151330 50%, #200b2c 100%);
+            color: #f8fafc;
+        }
+        h1, h2, h3, .font-heading {
+            font-family: 'Fredoka', cursive;
+        }
+        
+        /* Optimized Grid cells for classroom visibility */
+        .crossword-cell {
+            width: clamp(34px, 3.8vw, 50px);
+            height: clamp(34px, 3.8vw, 50px);
+            position: relative;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+        .cell-input {
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            font-size: clamp(1.1rem, 2.2vw, 1.8rem);
+            font-weight: 900;
+            text-transform: uppercase;
+            border-radius: 6px;
+            border: 2px solid #64748b;
+            background-color: #1e293b;
+            color: #ffffff;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.5);
+            outline: none;
+            caret-color: transparent;
+            padding: 0;
+        }
+        .cell-input:focus {
+            border-color: #f43f5e;
+            box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.5);
+            transform: scale(1.06);
+            z-index: 20;
+            background-color: #334155;
+        }
+        .cell-number {
+            position: absolute;
+            top: 1px;
+            left: 2px;
+            font-size: clamp(0.65rem, 0.85vw, 0.8rem);
+            font-weight: 900;
+            color: #f1f5f9;
+            pointer-events: none;
+            z-index: 10;
+            line-height: 1;
+            background-color: rgba(15, 23, 42, 0.95);
+            padding: 1px 3px;
+            border-radius: 3px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .cell-blocked {
+            background-color: transparent;
+            border: none;
+        }
+
+        .cell-correct {
+            background-color: #10b981 !important;
+            border-color: #34d399 !important;
+            color: #ffffff !important;
+        }
+
+        .cell-auto-revealed {
+            background-color: #f59e0b !important;
+            border-color: #fbbf24 !important;
+            color: #1e293b !important;
+        }
+
+        /* Styling for completed/disabled clues in the list */
+        .clue-item-completed {
+            opacity: 0.45 !important;
+            background-color: #0f172a !important;
+            border-color: #334155 !important;
+            pointer-events: none !important;
+            cursor: not-allowed !important;
+            filter: grayscale(80%);
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="w-screen h-screen flex flex-col p-2 gap-2 overflow-hidden">
+
+    <!-- FULLSCREEN WRAPPER -->
+    <div class="w-full h-full flex flex-col justify-between bg-slate-900/98 backdrop-blur-md rounded-xl shadow-2xl border border-slate-700/80 p-2 overflow-hidden">
+        
+        <!-- HEADER & COMPACT LEADERBOARD BAR -->
+        <header class="flex flex-col md:flex-row items-center justify-between gap-2 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 rounded-xl px-3 py-2 shrink-0 shadow-lg">
+            
+            <div class="flex items-center gap-2">
+                <span class="text-2xl">⚔️</span>
+                <div>
+                    <h1 class="text-sm md:text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-amber-300 tracking-wide leading-tight">
+                        Animal Adaptation Battle
+                    </h1>
+                    <p class="text-[10px] md:text-xs text-slate-300 font-medium leading-none">Grade 5 IPAS • 8 Groups Battle</p>
+                </div>
+            </div>
+
+            <!-- COMPACT GROUPS SCOREBOARD (8 GROUPS) -->
+            <div class="flex items-center gap-1 overflow-x-auto max-w-full py-0.5">
+                <div id="groups-scoreboard" class="flex gap-1.5">
+                    <!-- Groups injected by JS -->
+                </div>
+            </div>
+
+            <!-- TURN & ACTIONS -->
+            <div class="flex items-center gap-2 shrink-0">
+                <div class="flex items-center gap-1.5 bg-indigo-950 border border-indigo-500/60 px-2.5 py-1 rounded-lg shadow">
+                    <span class="text-[10px] uppercase text-indigo-300 font-extrabold">Turn:</span>
+                    <span id="active-group-display" class="text-xs md:text-sm font-black text-amber-300 font-heading">
+                        Group 1 🎯
+                    </span>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                    <button onclick="stealTurnPrompt()" class="bg-red-600 hover:bg-red-500 text-white font-bold px-2.5 py-1 rounded-lg shadow transition active:scale-95 text-[11px] cursor-pointer flex items-center gap-1 border border-red-400/40" title="Steal Question">
+                        <i class="fa-solid fa-bolt text-amber-300"></i> <span class="hidden sm:inline">Steal</span>
+                    </button>
+                    <button onclick="submitGroupAnswer()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-3 py-1 rounded-lg shadow transition active:scale-95 text-[11px] cursor-pointer flex items-center gap-1 border border-emerald-400/40">
+                        <i class="fa-solid fa-circle-check"></i> <span>Submit (+100)</span>
+                    </button>
+                    <button onclick="nextTurn()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold px-2 py-1 rounded-lg shadow transition active:scale-95 text-[11px] cursor-pointer" title="Next Turn">
+                        <i class="fa-solid fa-forward"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN BALANCED SPLIT (GRID LEFT, CLUES RIGHT) -->
+        <div class="flex-1 grid grid-cols-12 gap-2.5 min-h-0 overflow-hidden">
+            
+            <!-- CROSSWORD GRID PANEL (7 COLS) -->
+            <div class="col-span-7 flex items-center justify-center bg-slate-950/90 p-2 rounded-xl border border-slate-800/80 h-full overflow-auto shadow-inner">
+                <div id="grid-container" class="grid gap-1.5 p-2 bg-slate-900/90 rounded-xl border border-slate-700/70 m-auto">
+                    <!-- Grid dynamically generated -->
+                </div>
+            </div>
+
+            <!-- CLUES & ACTIVE QUESTION PANEL (5 COLS) -->
+            <div class="col-span-5 flex flex-col gap-2 h-full min-h-0">
+                
+                <!-- SELECTED ACTIVE QUESTION HIGHLIGHT BOX -->
+                <div class="bg-gradient-to-r from-indigo-950 to-slate-900 border-2 border-indigo-500/60 rounded-xl p-2.5 shadow-lg shrink-0 flex items-center gap-2.5">
+                    <div id="active-clue-icon" class="text-2xl shrink-0">🦎</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between text-xs font-bold text-amber-300 font-heading mb-0.5">
+                            <span id="active-clue-title">Select a question below</span>
+                            <span id="active-clue-badge" class="px-1.5 py-0.5 rounded text-[9px] bg-slate-800 text-slate-300">Ready</span>
+                        </div>
+                        <p id="active-clue-text" class="text-xs text-slate-100 font-bold leading-tight">Click any question from the list to view the clear explanation.</p>
+                        <p id="active-clue-trans" class="text-[11px] text-cyan-300 italic mt-0.5">-</p>
+                    </div>
+                </div>
+
+                <!-- SCROLLABLE CLUES TABS (ACROSS & DOWN) -->
+                <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-2 min-h-0">
+                    
+                    <!-- ACROSS CLUES -->
+                    <div class="bg-slate-900/90 border border-teal-500/40 rounded-xl p-2 flex flex-col min-h-0 shadow">
+                        <div class="text-[11px] font-bold text-teal-300 flex items-center justify-between mb-1 pb-1 border-b border-slate-700/80 shrink-0">
+                            <span><i class="fa-solid fa-arrow-right-long text-teal-400 mr-1"></i> ACROSS (Mendatar)</span>
+                        </div>
+                        <div id="across-clues" class="flex-1 overflow-y-auto space-y-1.5 pr-1">
+                            <!-- Across clues inserted by JS -->
+                        </div>
+                    </div>
+
+                    <!-- DOWN CLUES -->
+                    <div class="bg-slate-900/90 border border-pink-500/40 rounded-xl p-2 flex flex-col min-h-0 shadow">
+                        <div class="text-[11px] font-bold text-pink-300 flex items-center justify-between mb-1 pb-1 border-b border-slate-700/80 shrink-0">
+                            <span><i class="fa-solid fa-arrow-down-long text-pink-400 mr-1"></i> DOWN (Menurun)</span>
+                        </div>
+                        <div id="down-clues" class="flex-1 overflow-y-auto space-y-1.5 pr-1">
+                            <!-- Down clues inserted by JS -->
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- STEAL QUESTION MODAL -->
+    <div id="steal-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 max-w-sm w-full text-center shadow-2xl">
+            <div class="w-12 h-12 bg-red-500/20 text-red-400 border border-red-500/40 rounded-full flex items-center justify-center mx-auto mb-2 text-2xl">
+                ⚡
+            </div>
+            <h3 class="text-xl font-bold text-white font-heading mb-1">Steal Question!</h3>
+            <p class="text-slate-300 text-xs mb-3">Select group to attempt stealing points:</p>
+            
+            <div id="steal-group-buttons" class="grid grid-cols-2 gap-2 mb-4">
+                <!-- Buttons dynamically generated -->
+            </div>
+
+            <button onclick="closeStealModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 rounded-lg border border-slate-600 transition text-xs cursor-pointer">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <!-- WINNER CELEBRATION MODAL -->
+    <div id="winner-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="bg-gradient-to-b from-slate-900 to-indigo-950 border-2 border-amber-400/50 rounded-3xl p-6 max-w-md w-full text-center shadow-2xl">
+            <div class="w-16 h-16 bg-gradient-to-tr from-amber-400 to-yellow-200 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-950 text-3xl shadow-lg animate-bounce">
+                👑
+            </div>
+            <h3 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 font-heading mb-1">
+                BATTLE VICTORY! 🎉
+            </h3>
+            <p id="winner-announcement" class="text-base text-slate-200 font-semibold mb-4">
+                Group X wins the Animal Adaptation Battle!
+            </p>
+
+            <div id="final-rankings" class="bg-slate-900/80 rounded-xl p-3 mb-4 max-h-[160px] overflow-y-auto border border-slate-800 space-y-1.5 text-left text-xs">
+                <!-- Rankings inserted by JS -->
+            </div>
+
+            <button onclick="location.reload()" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black py-2.5 rounded-xl shadow-lg transition active:scale-95 font-heading text-base cursor-pointer">
+                Play New Battle 🔄
+            </button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        const GRID_SIZE = 15;
+        
+        // 32 Crystal-clear questions for Grade 5 ESL IPAS with crystal-clear phrasing
+        const puzzleWords = [
+            // ACROSS (16 words)
+            { number: 1, direction: "across", word: "CAMOUFLAGE", clue: "Body color or pattern that helps an animal blend with its background so predators cannot see it.", trans: "Kemampuan menyamar agar warna tubuh sama dengan lingkungan.", icon: "🦎", row: 1, col: 1 },
+            { number: 4, direction: "across", word: "GILLS", clue: "Breathing organs on the sides of a fish head used to take in oxygen from water.", trans: "Alat pernapasan khusus ikan di dalam air.", icon: "🐟", row: 3, col: 1 },
+            { number: 7, direction: "across", word: "BLUBBER", clue: "A thick layer of fat under the skin of marine animals (like whales) to keep warm in cold water.", trans: "Lapisan lemak tebal di bawah kulit untuk menahan dingin.", icon: "🧊", row: 5, col: 3 },
+            { number: 9, direction: "across", word: "VENOM", clue: "Poisonous liquid that dangerous animals (like snakes) inject through fangs to defend themselves.", trans: "Cairan racun yang disuntikkan hewan menggunakan taring.", icon: "🐍", row: 7, col: 1 },
+            { number: 11, direction: "across", word: "CARNIVORE", clue: "An animal that eats only meat from other animals to survive (such as lions and tigers).", trans: "Kelompok hewan pemakan daging.", icon: "🐅", row: 9, col: 5 },
+            { number: 13, direction: "across", word: "NOCTURNAL", clue: "Animals that sleep during the day and are active only at night (such as owls and bats).", trans: "Hewan yang aktif mencari makan pada malam hari.", icon: "🦉", row: 11, col: 2 },
+            { number: 16, direction: "across", word: "TALONS", clue: "Long, sharp, curved claws on the feet of hunting birds (like eagles) used to catch fish.", trans: "Cakar tajam dan melengkung pada burung pemangsa.", icon: "🦅", row: 13, col: 8 },
+            { number: 18, direction: "across", word: "SHELL", clue: "A hard outer covering that protects soft-bodied animals like turtles and snails from attacks.", trans: "Cangkang keras pelindung tubuh hewan.", icon: "🐢", row: 15, col: 1 },
+            { number: 20, direction: "across", word: "FEATHERS", clue: "Lightweight growths covering a bird's body that trap warmth and give shape for flying.", trans: "Bulu ringan penutup tubuh burung.", icon: "🪶", row: 3, col: 8 },
+            { number: 22, direction: "across", word: "HERBIVORE", clue: "An animal that eats only plants, leaves, grass, and fruits (such as cows and elephants).", trans: "Kelompok hewan pemakan tumbuhan.", icon: "🐘", row: 5, col: 7 },
+            { number: 24, direction: "across", word: "FINS", clue: "Flat limbs attached to a fish's body used for balancing, steering, and swimming.", trans: "Sirip tubuh ikan untuk berenang.", icon: "🐬", row: 7, col: 8 },
+            { number: 26, direction: "across", word: "MIMICRY", clue: "When a harmless animal looks like a dangerous animal to trick and scare away predators.", trans: "Meniru bentuk hewan berbahaya untuk mengelabui musuh.", icon: "🦋", row: 9, col: 1 },
+            { number: 28, direction: "across", word: "WEBBED", clue: "Skin stretched between toes (like ducks have) that acts like paddles to swim fast in water.", trans: "Bentuk kaki berselaput untuk mendayung di air.", icon: "🦆", row: 11, col: 9 },
+            { number: 30, direction: "across", word: "ARMOR", clue: "Heavy, bony plates covering an animal's body (like armadillos) to block enemy bites.", trans: "Pelindung tubuh keras beruas seperti baju zirah.", icon: "🛡️", row: 13, col: 1 },
+            { number: 31, direction: "across", word: "TRUNK", clue: "An elephant's extremely long, flexible nose used for breathing, drinking, and grabbing food.", trans: "Belalai panjang yang fleksibel pada gajah.", icon: "🐘", row: 15, col: 10 },
+            { number: 32, direction: "across", word: "BEAK", clue: "The hard mouth structure of a bird shaped specifically for the type of food it eats.", trans: "Paruh keras pada burung.", icon: "🦜", row: 1, col: 12 },
+
+            // DOWN (16 words)
+            { number: 2, direction: "down", word: "MIGRATION", clue: "Seasonal journey where animals travel long distances to warmer places for food.", trans: "Perpindahan musiman kelompok hewan ke tempat hangat.", icon: "🕊️", row: 1, col: 3 },
+            { number: 3, direction: "down", word: "HIBERNATE", clue: "Deep winter sleep where an animal's breathing slows down to survive when food is gone.", trans: "Tidur panjang untuk bertahan di musim dingin.", icon: "🐻", row: 1, col: 7 },
+            { number: 5, direction: "down", word: "PREDATOR", clue: "An animal that actively hunts, kills, and eats other animals for food.", trans: "Hewan pemburu atau pemangsa hewan lain.", icon: "🦁", row: 3, col: 5 },
+            { number: 6, direction: "down", word: "PREY", clue: "An animal species that is hunted, caught, and eaten by predators in the ecosystem.", trans: "Hewan yang menjadi santapan/mangsa predator.", icon: "🐇", row: 3, col: 11 },
+            { number: 8, direction: "down", word: "ECOLOCATION", clue: "Using sound echoes bouncing off objects to navigate in total darkness (used by bats).", trans: "Sistem navigasi menggunakan pantulan gema suara.", icon: "🦇", row: 5, col: 14 },
+            { number: 10, direction: "down", word: "FUR", clue: "Thick, soft hair covering mammals in cold regions to trap body heat against freezing wind.", trans: "Rambut atau bulu lebat mamalia penahan dingin.", icon: "🦊", row: 7, col: 4 },
+            { number: 12, direction: "down", word: "OMNIVORE", clue: "An animal group that eats both plants and meat (such as bears, pigs, and humans).", trans: "Kelompok hewan pemakan segala (tumbuhan & daging).", icon: "🦝", row: 8, col: 9 },
+            { number: 14, direction: "down", word: "ANTLERS", clue: "Branched bone structures on the heads of male deer used to fight rivals.", trans: "Tanduk bercabang pada rusa jantan.", icon: "🦌", row: 9, col: 13 },
+            { number: 15, direction: "down", word: "FANGS", clue: "Extra long, sharp teeth in carnivores used to pierce flesh and hold onto struggling prey.", trans: "Gigi taring panjang dan tajam pada karnivora.", icon: "🐺", row: 11, col: 4 },
+            { number: 17, direction: "down", word: "HUMP", clue: "The fatty mound on a camel's back that stores energy reserves for hot desert journeys.", trans: "Punuk penyimpanan cadangan lemak di punggung unta.", icon: "🐪", row: 11, col: 7 },
+            { number: 19, direction: "down", word: "SCALES", clue: "Small, overlapping, waterproof plates covering reptile skin (like snakes and lizards).", trans: "Sisik keras anti air penutup kulit reptil.", icon: "🦎", row: 1, col: 15 },
+            { number: 21, direction: "down", word: "QUILLS", clue: "Sharp, stiff needle spines on a porcupine's back that prick attacking enemies.", trans: "Duri tajam dan kaku pada punggung landak.", icon: "🦔", row: 4, col: 9 },
+            { number: 23, direction: "down", word: "POISON", clue: "A dangerous chemical toxin secreted through the skin of poisonous frogs to stop predators.", trans: "Zat racun berbahaya pada tubuh hewan.", icon: "🐸", row: 6, col: 2 },
+            { number: 25, direction: "down", word: "WHISKERS", clue: "Long, sensitive facial hairs on cats and seals used to feel nearby objects in the dark.", trans: "Kumis sensor peraba pada wajah hewan.", icon: "🐱", row: 8, col: 6 },
+            { number: 27, direction: "down", word: "POUCH", clue: "An external skin pocket on a mother kangaroo's belly where baby joeys grow safely.", trans: "Kantung perut khusus pada hewan berkantung.", icon: "🦘", row: 10, col: 11 },
+            { number: 29, direction: "down", word: "PACK", clue: "A family group of wolves or wild dogs that hunt together cooperatively as a team.", trans: "Kawanan kelompok hewan yang berburu bersama.", icon: "🐺", row: 12, col: 15 }
+        ];
+
+        // Group Scores State (8 Groups)
+        let groups = Array.from({ length: 8 }, (_, i) => ({
+            id: i + 1,
+            score: 0
+        }));
+
+        let currentGroupIdx = 0;
+        let activeSelectedWord = puzzleWords[0];
+        let gridState = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+        let solvedWords = new Set();
+        let autoRevealedWords = new Set();
+
+        // Audio Effects using Web Audio API
+        function playSound(type) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+                    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.4);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, ctx.currentTime);
+                    osc.frequency.setValueAtTime(130, ctx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.3);
+                } else if (type === 'steal') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(400, ctx.currentTime);
+                    osc.frequency.setValueAtTime(800, ctx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.25);
+                }
+            } catch(e) {}
+        }
+
+        // Initialize Grid Data
+        function initializeGridData() {
+            gridState = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+
+            puzzleWords.forEach(pw => {
+                let r = pw.row - 1;
+                let c = pw.col - 1;
+
+                for (let i = 0; i < pw.word.length; i++) {
+                    let currR = pw.direction === 'across' ? r : r + i;
+                    let currC = pw.direction === 'across' ? c + i : c;
+
+                    if (currR < GRID_SIZE && currC < GRID_SIZE) {
+                        if (!gridState[currR][currC]) {
+                            gridState[currR][currC] = {
+                                char: pw.word[i],
+                                number: i === 0 ? pw.number : null,
+                                words: []
+                            };
+                        } else if (i === 0 && !gridState[currR][currC].number) {
+                            gridState[currR][currC].number = pw.number;
+                        }
+                        gridState[currR][currC].words.push(pw.number);
+                    }
+                }
+            });
+        }
+
+        // Render UI Elements
+        function renderGrid() {
+            const container = document.getElementById('grid-container');
+            container.style.gridTemplateColumns = `repeat(${GRID_SIZE}, minmax(0, 1fr))`;
+            container.innerHTML = '';
+
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cellData = gridState[r][c];
+                    const cellDiv = document.createElement('div');
+                    cellDiv.className = 'crossword-cell';
+
+                    if (cellData) {
+                        if (cellData.number) {
+                            const numSpan = document.createElement('span');
+                            numSpan.className = 'cell-number';
+                            numSpan.innerText = cellData.number;
+                            cellDiv.appendChild(numSpan);
+                        }
+
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.maxLength = 1;
+                        input.className = 'cell-input';
+                        input.id = `cell-${r}-${c}`;
+                        input.dataset.row = r;
+                        input.dataset.col = c;
+
+                        input.addEventListener('focus', () => highlightClueFromCell(r, c));
+                        input.addEventListener('input', (e) => {
+                            e.target.value = e.target.value.toUpperCase();
+                            if(e.target.value) focusNextCell(r, c);
+                        });
+                        input.addEventListener('keydown', (e) => handleArrowKeys(e, r, c));
+
+                        cellDiv.appendChild(input);
+                    } else {
+                        cellDiv.classList.add('cell-blocked');
+                    }
+
+                    container.appendChild(cellDiv);
+                }
+            }
+        }
+
+        function renderScoreboard() {
+            const container = document.getElementById('groups-scoreboard');
+            container.innerHTML = '';
+
+            const sorted = [...groups].sort((a,b) => b.score - a.score);
+            const leaderId = sorted[0].score > 0 ? sorted[0].id : null;
+
+            groups.forEach((g, idx) => {
+                const isTurn = idx === currentGroupIdx;
+                const isLeader = g.id === leaderId;
+
+                const card = document.createElement('div');
+                card.className = `px-2 py-1 rounded-lg border transition-all text-center flex items-center gap-2 ${
+                    isTurn 
+                    ? 'border-amber-400 bg-indigo-950 ring-1 ring-amber-400/90 scale-105 shadow-md' 
+                    : 'border-slate-800 bg-slate-900/90 hover:border-slate-700'
+                }`;
+
+                card.innerHTML = `
+                    <span class="text-[11px] font-bold ${isTurn ? 'text-amber-300' : 'text-slate-300'}">G${g.id} ${isLeader ? '👑' : ''}</span>
+                    <span class="text-xs font-black text-white font-heading">${g.score}</span>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById('active-group-display').innerText = `Group ${groups[currentGroupIdx].id} 🎯`;
+        }
+
+        function renderClues() {
+            const acrossContainer = document.getElementById('across-clues');
+            const downContainer = document.getElementById('down-clues');
+
+            acrossContainer.innerHTML = '';
+            downContainer.innerHTML = '';
+
+            puzzleWords.forEach(pw => {
+                const isSolved = solvedWords.has(pw.number);
+                const isAuto = autoRevealedWords.has(pw.number);
+                const isDone = isSolved || isAuto;
+
+                const clueItem = document.createElement('div');
+                clueItem.id = `clue-item-${pw.number}`;
+                
+                // Add completed class if already answered/auto-filled
+                clueItem.className = `p-1.5 rounded-lg border transition flex gap-2 items-center text-xs ${
+                    isDone 
+                        ? 'clue-item-completed' 
+                        : 'bg-slate-950/80 border-slate-800 cursor-pointer hover:border-indigo-400'
+                }`;
+
+                if (!isDone) {
+                    clueItem.onclick = () => selectWordClue(pw);
+                }
+                
+                let statusText = 'Open';
+                let statusClass = 'bg-slate-800 text-slate-400';
+                if (isSolved) {
+                    statusText = 'Solved ✨';
+                    statusClass = 'bg-emerald-500/20 text-emerald-400 font-bold';
+                } else if (isAuto) {
+                    statusText = 'Done 🤖';
+                    statusClass = 'bg-amber-500/20 text-amber-300 font-bold';
+                }
+
+                clueItem.innerHTML = `
+                    <span class="text-lg shrink-0">${pw.icon}</span>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between font-bold leading-tight">
+                            <span class="${isDone ? 'text-slate-400' : 'text-amber-300'} font-heading text-[11px]">${pw.number}. (${pw.word.length} letters)</span>
+                            <span class="text-[9px] px-1.5 py-0.2 rounded ${statusClass}">
+                                ${statusText}
+                            </span>
+                        </div>
+                        <p class="${isDone ? 'text-slate-500 line-through' : 'text-slate-200'} text-[11px] truncate">${pw.clue}</p>
+                    </div>
+                `;
+
+                if (pw.direction === 'across') {
+                    acrossContainer.appendChild(clueItem);
+                } else {
+                    downContainer.appendChild(clueItem);
+                }
+            });
+
+            updateActiveClueDisplay();
+        }
+
+        function selectWordClue(pw) {
+            if (solvedWords.has(pw.number) || autoRevealedWords.has(pw.number)) return;
+            activeSelectedWord = pw;
+            updateActiveClueDisplay();
+
+            const r = pw.row - 1;
+            const c = pw.col - 1;
+            const cellEl = document.getElementById(`cell-${r}-${c}`);
+            if (cellEl) cellEl.focus();
+        }
+
+        function updateActiveClueDisplay() {
+            if (!activeSelectedWord) return;
+            const pw = activeSelectedWord;
+
+            document.getElementById('active-clue-icon').innerText = pw.icon;
+            document.getElementById('active-clue-title').innerText = `${pw.direction.toUpperCase()} #${pw.number} (${pw.word.length} Letters)`;
+            document.getElementById('active-clue-text').innerText = pw.clue;
+            document.getElementById('active-clue-trans').innerText = `🇮🇩 ${pw.trans}`;
+            
+            const badge = document.getElementById('active-clue-badge');
+            if (solvedWords.has(pw.number)) {
+                badge.innerText = "Solved ✨";
+                badge.className = "px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/20 text-emerald-400 font-bold";
+            } else if (autoRevealedWords.has(pw.number)) {
+                badge.innerText = "Auto-Filled 🤖";
+                badge.className = "px-1.5 py-0.5 rounded text-[9px] bg-amber-500/20 text-amber-300 font-bold";
+            } else {
+                badge.innerText = "Active Question";
+                badge.className = "px-1.5 py-0.5 rounded text-[9px] bg-indigo-500/20 text-indigo-300 font-bold";
+            }
+        }
+
+        function highlightClueFromCell(r, c) {
+            const cellData = gridState[r][c];
+            if (cellData && cellData.words.length > 0) {
+                const pw = puzzleWords.find(w => w.number === cellData.words[0]);
+                if (pw) {
+                    activeSelectedWord = pw;
+                    updateActiveClueDisplay();
+                }
+            }
+        }
+
+        function focusNextCell(r, c) {
+            if (!activeSelectedWord) return;
+            let nextR = activeSelectedWord.direction === 'across' ? r : r + 1;
+            let nextC = activeSelectedWord.direction === 'across' ? c + 1 : c;
+
+            const nextEl = document.getElementById(`cell-${nextR}-${nextC}`);
+            if (nextEl) nextEl.focus();
+        }
+
+        function handleArrowKeys(e, r, c) {
+            if (e.key === 'Backspace' && !e.target.value) {
+                let prevR = activeSelectedWord?.direction === 'down' ? r - 1 : r;
+                let prevC = activeSelectedWord?.direction === 'across' ? c - 1 : c;
+                const prevEl = document.getElementById(`cell-${prevR}-${prevC}`);
+                if (prevEl) prevEl.focus();
+            }
+        }
+
+        // Group Turn & Scoring Logic with Auto-Fill on Wrong Answer
+        function submitGroupAnswer() {
+            if (!activeSelectedWord || solvedWords.has(activeSelectedWord.number) || autoRevealedWords.has(activeSelectedWord.number)) {
+                return;
+            }
+
+            const pw = activeSelectedWord;
+            let isCorrect = true;
+            let r = pw.row - 1;
+            let c = pw.col - 1;
+
+            for (let i = 0; i < pw.word.length; i++) {
+                let currR = pw.direction === 'across' ? r : r + i;
+                let currC = pw.direction === 'across' ? c + i : c;
+                const input = document.getElementById(`cell-${currR}-${currC}`);
+
+                if (!input || input.value.toUpperCase() !== pw.word[i]) {
+                    isCorrect = false;
+                    break;
+                }
+            }
+
+            if (isCorrect) {
+                groups[currentGroupIdx].score += 100;
+                playSound('correct');
+                markWordSolved(pw, false);
+                renderScoreboard();
+                renderClues();
+                nextTurn();
+
+                if (solvedWords.size + autoRevealedWords.size === puzzleWords.length) {
+                    showWinnerModal();
+                }
+            } else {
+                playSound('wrong');
+                // Auto-fill correct answer by system since group failed
+                autoRevealWord(pw);
+                renderClues();
+                nextTurn();
+
+                if (solvedWords.size + autoRevealedWords.size === puzzleWords.length) {
+                    showWinnerModal();
+                }
+            }
+        }
+
+        function markWordSolved(pw, isAuto) {
+            if (isAuto) {
+                autoRevealedWords.add(pw.number);
+            } else {
+                solvedWords.add(pw.number);
+            }
+
+            let r = pw.row - 1;
+            let c = pw.col - 1;
+
+            for (let i = 0; i < pw.word.length; i++) {
+                let currR = pw.direction === 'across' ? r : r + i;
+                let currC = pw.direction === 'across' ? c + i : c;
+                const input = document.getElementById(`cell-${currR}-${currC}`);
+                if (input) {
+                    input.value = pw.word[i];
+                    if (isAuto) {
+                        input.classList.add('cell-auto-revealed');
+                    } else {
+                        input.classList.add('cell-correct');
+                    }
+                    input.disabled = true;
+                }
+            }
+        }
+
+        function autoRevealWord(pw) {
+            markWordSolved(pw, true);
+        }
+
+        function nextTurn() {
+            currentGroupIdx = (currentGroupIdx + 1) % groups.length;
+            renderScoreboard();
+        }
+
+        // Steal Question Feature
+        function stealTurnPrompt() {
+            if (!activeSelectedWord || solvedWords.has(activeSelectedWord.number) || autoRevealedWords.has(activeSelectedWord.number)) {
+                return;
+            }
+
+            const container = document.getElementById('steal-group-buttons');
+            container.innerHTML = '';
+
+            groups.forEach((g, idx) => {
+                if (idx !== currentGroupIdx) {
+                    const btn = document.createElement('button');
+                    btn.className = 'bg-slate-800 hover:bg-indigo-600 text-white font-bold py-2 rounded-lg border border-slate-700 transition text-xs flex items-center justify-center gap-1.5 cursor-pointer';
+                    btn.innerHTML = `<i class="fa-solid fa-hand-fist"></i> Group ${g.id}`;
+                    btn.onclick = () => executeSteal(idx);
+                    container.appendChild(btn);
+                }
+            });
+
+            document.getElementById('steal-modal').classList.remove('hidden');
+            document.getElementById('steal-modal').classList.add('flex');
+        }
+
+        function closeStealModal() {
+            document.getElementById('steal-modal').classList.add('hidden');
+            document.getElementById('steal-modal').classList.remove('flex');
+        }
+
+        function executeSteal(targetGroupIdx) {
+            closeStealModal();
+            playSound('steal');
+            currentGroupIdx = targetGroupIdx;
+            renderScoreboard();
+        }
+
+        // Winner Modal & Rankings
+        function showWinnerModal() {
+            const sorted = [...groups].sort((a,b) => b.score - a.score);
+            const winner = sorted[0];
+
+            document.getElementById('winner-announcement').innerText = `🏆 Group ${winner.id} wins with ${winner.score} points! 🎉`;
+
+            const rankContainer = document.getElementById('final-rankings');
+            rankContainer.innerHTML = '';
+
+            sorted.forEach((g, idx) => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between p-2 rounded-lg bg-slate-800/60 border border-slate-700/50';
+                row.innerHTML = `
+                    <span class="font-bold ${idx === 0 ? 'text-amber-300' : 'text-slate-300'}">
+                        ${idx + 1}. Group ${g.id} ${idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : ''}
+                    </span>
+                    <span class="font-black text-amber-400 font-heading">${g.score} pts</span>
+                `;
+                rankContainer.appendChild(row);
+            });
+
+            document.getElementById('winner-modal').classList.remove('hidden');
+            document.getElementById('winner-modal').classList.add('flex');
+        }
+
+        // Initialize Game
+        window.onload = function() {
+            initializeGridData();
+            renderGrid();
+            renderClues();
+            renderScoreboard();
+        };
+    </script>
+</body>
+</html>
